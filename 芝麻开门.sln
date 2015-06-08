@@ -1,0 +1,22 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 2013
+VisualStudioVersion = 12.0.21005.1
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "芝麻开门", "芝麻开门\芝麻开门.csproj", "{9B715CA7-A08A-4984-8FC2-E66EFBA4570F}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{9B715CA7-A08A-4984-8FC2-E66EFBA4570F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9B715CA7-A08A-4984-8FC2-E66EFBA4570F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9B715CA7-A08A-4984-8FC2-E66EFBA4570F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9B715CA7-A08A-4984-8FC2-E66EFBA4570F}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal
