@@ -59,7 +59,7 @@ namespace 芝麻开门
             string strFileName = System.IO.Path.GetFileName(strFullPath).ToLower();
             caculatWindows();
             this.tmrCheckWindow.Enabled = true;
-            //this.WindowState = FormWindowState.Maximized;
+            this.WindowState = FormWindowState.Maximized;
             //this.TopMost = true;
             this.webBrowser1.Navigate("http://zmkm.chensi.org.cn/serverlogin.aspx");
         }
@@ -524,16 +524,6 @@ namespace 芝麻开门
                     strurl += "&remoteuserid=" + currentUserId + "&utctime=" + utctime + "&token=" + caculateToken(utctime);
                     currentConnection.orderid.Add(orderid);
                 }
-                
-
-                //zmkmservice.asmx/addUserOrder
-                //?userid=string&orderid=string&orderprice=string&ordertaobaoid=string&remoteuserid=string&utctime=string&token=string
-                
-                // public void addUserOrder(
-                // string userid, string orderid, string orderprice,
-                // string ordertaobaoid, string remoteuserid,
-                // string utctime, string token)
-                
             }
             
         }
@@ -545,7 +535,30 @@ namespace 芝麻开门
 
         private void webBrowser1_Navigated(object sender, WebBrowserNavigatedEventArgs e)
         {
-            
+            string currenturl = webBrowser1.Url.ToString();
+            if (currenturl.IndexOf("http://www.taobao.com/?msg=") >= 0)
+            {
+                string strMessage;
+                int start, end;
+                start = currenturl.IndexOf("http://www.taobao.com/?msg=") + "http://www.taobao.com/?msg=".Length;
+                end = currenturl.Length;
+                strMessage = currenturl.Substring(start, end - start);
+                userlogon ul =
+                        JsonConvert.DeserializeObject<userlogon>(strMessage);
+                currentUserId = ul.userid;//此处已经成功登陆
+                webBrowser1.Url = new Uri("http://www.taobao.com");
+                button2.Enabled = true;
+                tmrUpdateStatus.Enabled = true;
+            }
+            if (webBrowser1.Url.ToString().IndexOf("http://zmkm.chensi.org.cn/")<0)
+            {
+                if (bolSoftwareReady && currenturl.IndexOf("http://www.taobao.com/?msg=") < 0)
+                    this.txturl.Text = webBrowser1.Url.ToString();
+                else
+                    this.txturl.Text = "http://www.taobao.com";
+            }
+            else
+                this.txturl.Text = "http://www.taobao.com";
         }
 
         private void webBrowser1_Navigating(object sender, WebBrowserNavigatingEventArgs e)
@@ -553,7 +566,6 @@ namespace 芝麻开门
             webDocCompleted = false;
             string currenturl = webBrowser1.Url.ToString();
             //this.txturl.Text = webBrowser1.Url.ToString();
-            SetText(this.txturl, currenturl);
             string pagename;
             pagename = currenturl.Substring(currenturl.LastIndexOf("/") + 1, currenturl.Length - currenturl.LastIndexOf("/") - 1);
             if (pagename == "serverlogin.aspx" && currentAnyDeskId == "")
@@ -567,33 +579,6 @@ namespace 芝麻开门
                 MessageBox.Show("请确保开启两个或以上的小号才能使用该系统", "芝麻开门");
                 e.Cancel = true;
             }*/
-            
-            if (currenturl.IndexOf("http://www.taobao.com/?msg=") >= 0)
-            {
-                string strMessage;
-                int start, end;
-                start = currenturl.IndexOf("http://www.taobao.com/?msg=") + "http://www.taobao.com/?msg=".Length;
-                end = currenturl.Length;
-                strMessage = currenturl.Substring(start, end - start);
-                userlogon ul =
-                        JsonConvert.DeserializeObject<userlogon>(strMessage);
-                currentUserId = ul.userid;//此处已经成功登陆
-                /*
-                webBrowser1.Url = new Uri("http://www.taobao.com");
-                button2.Enabled = true;
-                tmrUpdateStatus.Enabled = true;*/
-            }
-
-            /*
-            if (webBrowser1.Url.ToString().IndexOf("http://zmkm.chensi.org.cn/")<0)
-            {
-                if (bolSoftwareReady && currenturl.IndexOf("http://www.taobao.com/?msg=") < 0)
-                    this.txturl.Text = webBrowser1.Url.ToString();
-                else
-                    this.txturl.Text = "http://www.taobao.com";
-            }
-            else
-                this.txturl.Text = "http://www.taobao.com";*/
         }
 
         private void button5_Click(object sender, EventArgs e)
@@ -616,9 +601,12 @@ namespace 芝麻开门
 
         private void Form1_FormClosing(object sender, FormClosingEventArgs e)
         {
-            /*
-            MessageBox.Show("请勿关闭挂机端，未挂满足够市场的用户将无法使用芝麻开门的其他功能","警告");
-            e.Cancel = true;*/
+            DialogResult dr = MessageBox.Show("未挂满足够时长的用户将无法使用芝麻开门的其他功能，\r\n您确定退出吗?", "警告", MessageBoxButtons.YesNo);
+            if (dr==DialogResult.No)
+            {
+                e.Cancel=true;
+            }
+            Process.GetCurrentProcess().Kill();
         }
         public static long getUTCTime()
         {
@@ -670,12 +658,13 @@ namespace 芝麻开门
                 string utctime = getUTCTime().ToString();
                 string strurl = "http://zmkm.chensi.org.cn/zmkmservice.asmx/sendHeartBeat?userid=" + currentUserId + 
                     "&utctime=" + utctime + "&token=" + caculateToken(utctime);
-                this.lblConnectTime.Text = strurl;
                 string strmessage = GetDataFromMarket(strurl);//发送心跳包
+                this.lblConnectTime.Text = "心跳包已发送";
                 if (strmessage.IndexOf("errcode")>=0)
                 {
                     this.webBrowser1.Navigate("http://zmkm.chensi.org.cn/login.aspx");
                 }
+                this.lblLastUpdateTime.Text = DateTime.Now.ToLongTimeString();
                 GjTimerCount = 0;
             }
         }

@@ -271,9 +271,9 @@
             this.label6.AutoSize = true;
             this.label6.Location = new System.Drawing.Point(25, 23);
             this.label6.Name = "label6";
-            this.label6.Size = new System.Drawing.Size(65, 12);
+            this.label6.Size = new System.Drawing.Size(77, 12);
             this.label6.TabIndex = 5;
-            this.label6.Text = "您好，张三";
+            this.label6.Text = "您的挂机时间";
             // 
             // label5
             // 
