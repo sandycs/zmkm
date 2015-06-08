@@ -59,9 +59,9 @@ namespace 芝麻开门
             string strFileName = System.IO.Path.GetFileName(strFullPath).ToLower();
             caculatWindows();
             this.tmrCheckWindow.Enabled = true;
-            this.WindowState = FormWindowState.Maximized;
-            this.TopMost = true;
-            //this.webBrowser1.Navigate("http://zmkm.chensi.org.cn/login.aspx");
+            //this.WindowState = FormWindowState.Maximized;
+            //this.TopMost = true;
+            this.webBrowser1.Navigate("http://zmkm.chensi.org.cn/serverlogin.aspx");
         }
         private string currentConnectStatus = "";
         private int ChildHandleCount = 0;
@@ -90,31 +90,13 @@ namespace 芝麻开门
             anydeskProcess = Process.GetProcessesByName("anyD");
             for (int i = 0; i < anydeskProcess.Length; i++)
                 anydeskProcess[i].Kill();
-            //创建实例
-            Process p = new Process();
-            //设定调用的程序名，不是系统目录的需要完整路径
-            p.StartInfo.FileName = "cmd.exe";
-            //传入执行参数
-            //p.StartInfo.Arguments = " " + command;
-            p.StartInfo.UseShellExecute = false;
-            p.StartInfo.RedirectStandardInput = true;
-            p.StartInfo.RedirectStandardOutput = true;
-            p.StartInfo.RedirectStandardError = true;
-            p.StartInfo.CreateNoWindow = true;
-            //启动
-            p.Start();
-            p.StandardInput.WriteLine("anyD.exe --start-service >serverstatus.txt");
-            Thread.Sleep(1500);
-            p.StandardInput.WriteLine("echo 54FF!3E6C | anyD.exe --set-password");//为云端设置密码
-            Thread.Sleep(1500);
-            p.StandardInput.WriteLine("anyD.exe --get-id >serverid.txt");
-            p.StandardInput.WriteLine("exit");
-            p.BeginOutputReadLine();
-            p.BeginErrorReadLine();
-            p.OutputDataReceived += new DataReceivedEventHandler(SortOutputHandler);
-            p.ErrorDataReceived += new DataReceivedEventHandler(SortErrorHandler);
-            p.WaitForExit();
-            p.Close();
+            SetText(lblConnectTime,"正在初始化系统..步骤1/4");
+            RunCMD("anyD.exe --install \"c:\\anyD\" --start-with-win﻿﻿ --silent ﻿--remove-first");
+            SetText(lblConnectTime, "正在初始化系统..步骤2/4");
+            RunCMD("echo 54FF!3E6C | anyD.exe --set-password");
+            SetText(lblConnectTime, "正在初始化系统..步骤3/4");
+            RunCMD("anyD.exe --get-id >serverid.txt");
+            SetText(lblConnectTime, "正在初始化系统..步骤4/4");
             //打开serverid.txt
             currentAnyDeskId = "";
             System.IO.StreamReader sr = new System.IO.StreamReader("serverid.txt");
@@ -128,12 +110,38 @@ namespace 芝麻开门
                 }
                 setLoginParameters slp = new setLoginParameters(SetParametersForLogin);
                 this.Invoke(slp);
+                SetText(lblConnectTime, "系统初始化完成");
             }
             if (currentAnyDeskId=="")
             {
                 MessageBox.Show("无法正确启动远程工具，请重新安装本程序。","芝麻开门");
                 Process.GetCurrentProcess().Kill();
             }
+        }
+
+        private void RunCMD(string cmd)
+        {
+            //创建实例
+            Process p = new Process();
+            //设定调用的程序名，不是系统目录的需要完整路径
+            p.StartInfo.FileName = "cmd.exe";
+            //传入执行参数
+            //p.StartInfo.Arguments = " " + command;
+            p.StartInfo.UseShellExecute = false;
+            p.StartInfo.RedirectStandardInput = true;
+            p.StartInfo.RedirectStandardOutput = true;
+            p.StartInfo.RedirectStandardError = true;
+            p.StartInfo.CreateNoWindow = true;
+            //启动
+            p.Start();
+            p.StandardInput.WriteLine(cmd);
+            p.StandardInput.WriteLine("exit");
+            p.BeginOutputReadLine();
+            p.BeginErrorReadLine();
+            p.OutputDataReceived += new DataReceivedEventHandler(SortOutputHandler);
+            p.ErrorDataReceived += new DataReceivedEventHandler(SortErrorHandler);
+            p.WaitForExit();
+            p.Close();
         }
 
         private void SetParametersForLogin()
@@ -144,7 +152,9 @@ namespace 芝麻开门
             if (webpagename == "serverlogin.aspx")
             {
                 //替换其中的machinecode
-                doc.GetElementsByTagName("input")["anydeskid"].SetAttribute("value", currentAnyDeskId);
+                object[] objects = new object[1];
+                objects[0] = currentAnyDeskId;
+                webBrowser1.Document.InvokeScript("setAnyDeskId", objects);
             }
         }
 
@@ -416,6 +426,11 @@ namespace 芝麻开门
             {
                 return;
             }
+            if (txturl.Text.IndexOf("zmkm.chensi.org.cn") >= 0)
+            {
+                txturl.Text = "http://www.taobao.com";
+                this.webBrowser1.Navigate(this.txturl.Text);
+            }
             if (txturl.Text!="")
             {
                 this.webBrowser1.Navigate(this.txturl.Text);
@@ -435,6 +450,13 @@ namespace 芝麻开门
             foreach (HtmlElement form in this.webBrowser1.Document.Forms)
             {
                 form.SetAttribute("target", "_self");
+            }
+            if (webBrowser1.Url.ToString().ToLower().IndexOf("http://zmkm.chensi.org.cn/serverlogin.aspx") >= 0 )
+            {
+                //替换其中的machinecode
+                object[] objects = new object[1];
+                objects[0] = currentAnyDeskId;
+                webBrowser1.Document.InvokeScript("setAnyDeskId", objects);
             }
             if (webBrowser1.Url.ToString().ToLower().IndexOf("http://trade.tmall.com/order/confirm_goods.htm") >= 0)
             {
@@ -523,38 +545,18 @@ namespace 芝麻开门
 
         private void webBrowser1_Navigated(object sender, WebBrowserNavigatedEventArgs e)
         {
-            string currenturl = webBrowser1.Url.ToString();
-            if (currenturl.IndexOf("http://www.taobao.com/?msg=") >= 0)
-            {
-                string strMessage;
-                int start, end;
-                start = currenturl.IndexOf("http://www.taobao.com/?msg=") + "http://www.taobao.com/?msg=".Length;
-                end = currenturl.Length;
-                strMessage = currenturl.Substring(start, end - start);
-                userlogon ul =
-                        JsonConvert.DeserializeObject<userlogon>(strMessage);
-                currentUserId = ul.userid;//此处已经成功登陆
-                webBrowser1.Url = new Uri("http://www.taobao.com");
-                button2.Enabled = true;
-                tmrUpdateStatus.Enabled = true;
-            }
-            if (webBrowser1.Url.ToString().IndexOf("http://zmkm.chensi.org.cn/")<0)
-            {
-                if (bolSoftwareReady && currenturl.IndexOf("http://www.taobao.com/?msg=") < 0)
-                    this.txturl.Text = webBrowser1.Url.ToString();
-                else
-                    this.txturl.Text = "http://www.taobao.com";
-            }
-            else
-                this.txturl.Text = "http://www.taobao.com";
+            
         }
 
         private void webBrowser1_Navigating(object sender, WebBrowserNavigatingEventArgs e)
         {
             webDocCompleted = false;
             string currenturl = webBrowser1.Url.ToString();
-            currenturl = currenturl.Substring(currenturl.LastIndexOf("/") + 1, currenturl.Length - currenturl.LastIndexOf("/") - 1);
-            if (currenturl == "serverlogin.aspx" && currentAnyDeskId == "")
+            //this.txturl.Text = webBrowser1.Url.ToString();
+            SetText(this.txturl, currenturl);
+            string pagename;
+            pagename = currenturl.Substring(currenturl.LastIndexOf("/") + 1, currenturl.Length - currenturl.LastIndexOf("/") - 1);
+            if (pagename == "serverlogin.aspx" && currentAnyDeskId == "")
             {
                 MessageBox.Show("请等待系统初始化完成", "芝麻开门");
                 e.Cancel = true;
@@ -565,6 +567,33 @@ namespace 芝麻开门
                 MessageBox.Show("请确保开启两个或以上的小号才能使用该系统", "芝麻开门");
                 e.Cancel = true;
             }*/
+            
+            if (currenturl.IndexOf("http://www.taobao.com/?msg=") >= 0)
+            {
+                string strMessage;
+                int start, end;
+                start = currenturl.IndexOf("http://www.taobao.com/?msg=") + "http://www.taobao.com/?msg=".Length;
+                end = currenturl.Length;
+                strMessage = currenturl.Substring(start, end - start);
+                userlogon ul =
+                        JsonConvert.DeserializeObject<userlogon>(strMessage);
+                currentUserId = ul.userid;//此处已经成功登陆
+                /*
+                webBrowser1.Url = new Uri("http://www.taobao.com");
+                button2.Enabled = true;
+                tmrUpdateStatus.Enabled = true;*/
+            }
+
+            /*
+            if (webBrowser1.Url.ToString().IndexOf("http://zmkm.chensi.org.cn/")<0)
+            {
+                if (bolSoftwareReady && currenturl.IndexOf("http://www.taobao.com/?msg=") < 0)
+                    this.txturl.Text = webBrowser1.Url.ToString();
+                else
+                    this.txturl.Text = "http://www.taobao.com";
+            }
+            else
+                this.txturl.Text = "http://www.taobao.com";*/
         }
 
         private void button5_Click(object sender, EventArgs e)
@@ -587,8 +616,9 @@ namespace 芝麻开门
 
         private void Form1_FormClosing(object sender, FormClosingEventArgs e)
         {
+            /*
             MessageBox.Show("请勿关闭挂机端，未挂满足够市场的用户将无法使用芝麻开门的其他功能","警告");
-            e.Cancel = true;
+            e.Cancel = true;*/
         }
         public static long getUTCTime()
         {
@@ -632,12 +662,15 @@ namespace 芝麻开门
                 this.lbldaytime.Text = todaygjtime.ToLongTimeString();
             }
             GjTimerCount++;
+            if (GjTimerCount>5)
+                this.lblConnectTime.Text = "下一次心跳包发送在" + (10 - GjTimerCount);
             if (GjTimerCount%10==0)
             {
                 //发送心跳包
                 string utctime = getUTCTime().ToString();
                 string strurl = "http://zmkm.chensi.org.cn/zmkmservice.asmx/sendHeartBeat?userid=" + currentUserId + 
                     "&utctime=" + utctime + "&token=" + caculateToken(utctime);
+                this.lblConnectTime.Text = strurl;
                 string strmessage = GetDataFromMarket(strurl);//发送心跳包
                 if (strmessage.IndexOf("errcode")>=0)
                 {
